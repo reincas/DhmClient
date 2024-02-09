@@ -4,11 +4,14 @@
 # This program is free software under the terms of the MIT license.      #
 ##########################################################################
 
+import numpy as np
 import cv2 as cv
-from holoclient import DhmClient
+from dhmclient import DhmClient
 
+HOST = "192.168.22.2"
+PORT = 27182
 
-with DhmClient() as client:
+with DhmClient(host=HOST, port=PORT) as client:
     
     cid = 178
     configs = client.ConfigList

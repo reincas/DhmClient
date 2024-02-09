@@ -42,6 +42,8 @@ class HoloClient(DhmClient):
             minm = float(kwargs.pop("oplminms", 5.0)),
             opt = bool(kwargs.pop("oplopt", True)),
             timestamp = None,
+            m = None,
+            m0 = None,
         )
 
         # Reference parameters

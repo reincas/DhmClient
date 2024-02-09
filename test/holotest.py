@@ -4,7 +4,7 @@
 # This program is free software under the terms of the MIT license.      #
 ##########################################################################
 
-from holoclient import HoloClient
+from dhmclient import HoloClient
 
 HOST = "192.168.22.2"
 PORT = 27182
