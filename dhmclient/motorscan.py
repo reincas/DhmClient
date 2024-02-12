@@ -12,7 +12,6 @@ order to balance the lengths of the object and reference beams.
 import bisect
 import numpy as np
 
-from . import utils
 from .hologram import locateOrder
 
 
