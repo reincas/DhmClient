@@ -26,6 +26,9 @@ class HoloClient(DhmClient):
 
     def __init__(self, **kwargs):
 
+        # SciData author configuration
+        self.dc_config = kwargs.pop("config", None) or load_config()
+        
         # Optional interface to the stage controller
         self.controller = kwargs.pop("controller", None)
 
@@ -178,6 +181,10 @@ class HoloClient(DhmClient):
             items = None
 
         # Return HoloContainer
+        config = self.dc_config
+        if "config" in kwargs:
+            config = dict(config).update(kwargs["config"])
+        kwargs["config"] = config
         return HoloContainer(holo=holo, params=params, items=items, **kwargs)
 
 

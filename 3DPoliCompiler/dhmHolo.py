@@ -12,6 +12,7 @@
 import sys
 import os.path
 
+from scidatacontainer import load_config
 from holoclient import HoloClient
 
 deskPath = "C:/Users/Nanofactory/Desktop/"
@@ -41,6 +42,7 @@ print("Author: %s" % author)
 print("Email: %s" % email)
 
 # Read hologram with optimized shutter value
-with HoloClient() as client:
-    dc = client.container(opt=True, show=False, author=author, email=email)
+config = load_config(author=author, email=email)
+with HoloClient(config=config) as client:
+    dc = client.container(opt=True, show=False)
     dc.write(fn)
