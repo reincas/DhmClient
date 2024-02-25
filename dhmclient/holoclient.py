@@ -6,7 +6,7 @@
 
 from types import SimpleNamespace
 import numpy as np
-from scidatacontainer import timestamp
+from scidatacontainer import timestamp, load_config
 
 from .dhmclient import DhmClient
 from .rawholo import HoloContainer

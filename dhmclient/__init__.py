@@ -7,3 +7,4 @@
 from .holoclient import HoloClient
 from .rawholo import HoloContainer
 from .dhmclient import DhmClient
+from .zernike import Zernike
