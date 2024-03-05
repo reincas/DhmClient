@@ -6,32 +6,42 @@
 
 import numpy as np
 import cv2 as cv
+from nanofactorysystem import getLogger, mkdir
 from dhmclient import DhmClient
 
 HOST = "192.168.22.2"
 PORT = 27182
 
+path = mkdir("test/dhm")
+logger = getLogger(logfile="%s/console.log" % path)
+
 with DhmClient(host=HOST, port=PORT) as client:
     
+    logger.info("Select objective.")
     cid = 178
     configs = client.ConfigList
     name = dict(configs)[cid]
     client.Config = cid
-    print("Objective: %s [%d]" % (name, cid))
-    print("Motor pos:", client.MotorPos)
+    logger.info("Objective: %s [%d]" % (name, cid))
 
+    logger.info("Motor pos: %.1f µm" % client.MotorPos)
+
+    logger.info("Test camera shutter.")
     shutter = client.CameraShutter
     shutterus = client.CameraShutterUs
-    print("Shutter: %.1f us [%d]" % (shutterus, shutter))
+    logger.info("Shutter: %.1f us [%d]" % (shutterus, shutter))
 
+    logger.info("Get hologram image.")
     img = client.CameraImage
-    cv.imwrite("hologram.png", img)
+    fn = "%s/hologram.png" % path
+    logger.info("Store hologram image file '%s'" % fn)
+    cv.imwrite(fn, img)
 
     imin = np.min(img)
     imax = np.max(img)
     iavg = np.average(img)
-    print("Pixel values: %d - %d (avg: %.1f)" % (imin, imax, iavg))
+    logger.info("Pixel values: %d - %d (avg: %.1f)" % (imin, imax, iavg))
 
-    print("Done.")
+    logger.info("Done.")
 
 

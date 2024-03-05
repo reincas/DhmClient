@@ -84,9 +84,3 @@ class HoloContainer(Container):
         """ Shortcut to the parameter data dictionary. """
         
         return self["meas/image.json"]
-
-
-##########################################################################
-if __name__ == "__main__":
-
-    pass    

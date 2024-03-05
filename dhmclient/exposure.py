@@ -4,16 +4,20 @@
 # This program is free software under the terms of the MIT license.      #
 ##########################################################################
 
+import logging
 import numpy as np
 
 
-def optImage(client, maxof=9, show=False):
+def optImage(client, maxof=9, logger=None):
 
     """ Return image with optimized exposure time. The number of
     overflow pixels in the returned image will will be less or equal
     maxof. The second return value is the number of camera images
     grabbed by the algorithm. """
 
+    # Prepare logger
+    logger = logger or logging
+    
     # Emergency break: Maximum number of images
     maxcount = 100
     
@@ -48,17 +52,16 @@ def optImage(client, maxof=9, show=False):
         numof = np.count_nonzero(img >= maxpixel)
 
         # Show intermediate results
-        if show:
-            if smin is None:
-                str0 = "None"
-            else:
-                str0 = "%4d" % smin
-            str1 = "%4d [%4d]" % (s, numof)
-            if smax is None:
-                str2 = "None"
-            else:
-                str2 = "%4d" % smax
-            print("%03d: %s --  %s --  %s" % (count, str0, str1, str2))
+        if smin is None:
+            str0 = "None"
+        else:
+            str0 = "%4d" % smin
+        str1 = "%4d [%4d]" % (s, numof)
+        if smax is None:
+            str2 = "None"
+        else:
+            str2 = "%4d" % smax
+        logger.debug("%03d: %s --  %s --  %s" % (count, str0, str1, str2))
 
         # Number of overflow pixels above limit
         if numof > maxof:

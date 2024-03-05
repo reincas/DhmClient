@@ -5,10 +5,8 @@
 ##########################################################################
 
 from scidatacontainer import load_config
+from nanofactorysystem import getLogger, mkdir
 from dhmclient import HoloClient
-
-HOST = "192.168.22.2"
-PORT = 27182
 
 config = load_config(
     author = "Reinhard Caspary",
@@ -16,24 +14,38 @@ config = load_config(
     organization = "Leibniz Universität Hannover",
     orcid = "0000-0003-0460-6088")
 
-with HoloClient(host=HOST, port=PORT, config=config, oplmode="both") as client:
+args = {
+    "host": "192.168.22.2",
+    "port": 27182,
+    "oplmode": "both",
+    }
+
+path = mkdir("test/holo")
+logger = getLogger(logfile="%s/console.log" % path)
+
+with HoloClient(logger=logger, config=config, **args) as client:
+    
+    logger.info("Select objective.")
     cid = 178
     configs = client.ConfigList
     name = dict(configs)[cid]
     client.Config = cid
-    print("Objective: %s [%d]" % (name, cid))
+    logger.info("Objective: %s [%d]" % (name, cid))
 
-    m = client.motorScan(show=True)
-    print("Motor pos: %.1f µm (set: %.1f µm)", (client.MotorPos, m))
+    logger.info("Motor scan.")
+    opl = client.motorScan()
+    logger.info("Motor pos: %.1f µm (set: %.1f µm)" % (client.MotorPos, opl.m))
 
-    client.getImage(opt=True, show=True)
-
-    dc = client.container(opt=True, show=True)
-    dc.write("hologram.zdc")
+    logger.info("Get hologram container.")
+    dc = client.container(opt=True)
+    fn = "%s/hologram.zdc" % path
+    logger.info("Store hologram container file '%s'" % fn)
+    dc.write(fn)
     print(dc)
 
+    logger.info("Test camera shutter.")
     shutter = client.CameraShutter
     shutterus = client.CameraShutterUs
-    print("Shutter: %.1f us [%d]" % (shutterus, shutter))
+    logger.info("Shutter: %.1f us [%d]" % (shutterus, shutter))
 
-    print("Done.")
+    logger.info("Done.")

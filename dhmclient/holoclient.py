@@ -24,10 +24,14 @@ class HoloClient(DhmClient):
     contrastQuantile = 0.05
 
 
-    def __init__(self, **kwargs):
+    def __init__(self, controller=None, logger=None, config=None, **kwargs):
+
+        # Store logger
+        self.log = logger or logging
+        self.log.info("Initializing HoloClient.")
 
         # SciData author configuration
-        self.dc_config = kwargs.pop("config", None) or load_config()
+        self.config = config or load_config()
         
         # Optional interface to the stage controller
         self.controller = kwargs.pop("controller", None)
@@ -59,8 +63,11 @@ class HoloClient(DhmClient):
         # Initialize parent class
         super().__init__(**kwargs)
 
+        # Done
+        self.log.info("Initialized HoloClient.")
+        
 
-    def getImage(self, opt=True, show=False):
+    def getImage(self, opt=True):
 
         """ Grab a camera image with maximized exposure time limited by
         a maximum of self.maxof overflow pixels if opt is True. Return
@@ -69,14 +76,14 @@ class HoloClient(DhmClient):
         time, if opt is False. """
 
         if opt:
-            img, count = optImage(self, self.maxof, show)
+            img, count = optImage(self, self.maxof, self.log)
         else:
             img = self.CameraImage
             count = None
         return img, count
 
 
-    def motorScan(self, m0=None, show=False):
+    def motorScan(self, m0=None):
 
         """ Perform a scan of the optical path length (OPL) motor. The
         interference contrast is maximized by balancing the path lengths
@@ -86,7 +93,7 @@ class HoloClient(DhmClient):
         opl.m, opl.m0 = motorScan(self, mode=opl.mode, steps=opl.steps,
                                   dm=opl.dm, thresh=opl.thresh, init=m0,
                                   minc=opl.minc, minm=opl.minm, opt=opl.opt,
-                                  show=show)
+                                  logger=self.log)
         return opl
 
 
@@ -160,12 +167,12 @@ class HoloClient(DhmClient):
         return params
 
 
-    def container(self, opt=True, show=False, **kwargs):
+    def container(self, opt=True, config=None, **kwargs):
 
         """ Return a HoloContainer with current hologram image. """
 
         # Hologram image
-        holo, count = self.getImage(opt=opt, show=show)
+        holo, count = self.getImage(opt=opt)
 
         # Hologram parameters
         params = self.parameters(holo, count)
@@ -181,11 +188,5 @@ class HoloClient(DhmClient):
             items = None
 
         # Return HoloContainer
-        kwargs["config"] = kwargs.get("config", self.dc_config)
-        return HoloContainer(holo=holo, params=params, items=items, **kwargs)
-
-
-############################################################################
-if __name__ == "__main__":
-
-    pass
+        config = config or self.config
+        return HoloContainer(holo=holo, params=params, items=items, config=config, **kwargs)

@@ -273,9 +273,3 @@ def refHolo(img, blur=None, order=None, ref=None):
     ref.terms, ref.names = polyTerms(phase.shape, ref.order)
     ref.fit = phaseFit(phase, ref.terms)
     return ref
-
-
-############################################################################
-if __name__ == "__main__":
-
-    pass

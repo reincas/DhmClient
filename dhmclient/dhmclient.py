@@ -292,10 +292,3 @@ class DhmClient(object):
 
         # Return dhm data dictionary
         return params
-
-
-
-############################################################################
-if __name__ == "__main__":
-
-    pass

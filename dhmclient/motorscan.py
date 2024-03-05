@@ -10,6 +10,7 @@ order to balance the lengths of the object and reference beams.
 """
 
 import bisect
+import logging
 import numpy as np
 
 from .hologram import locateOrder
@@ -139,10 +140,13 @@ def moveMotor(client, m, opt=False):
     return locateOrder(img)[-1]
 
 
-def addMotor(client, data, m, opt=False, show=False):
+def addMotor(client, data, m, opt=False, logger=None):
 
     """ Move the OPL motor to the given position, take a camera image and
     return its contrast and the weight of its first diffraction order peak. """
+
+    # Prepare logger
+    logger = logger or logging
 
     value = data[m]
     if value != None:
@@ -151,12 +155,11 @@ def addMotor(client, data, m, opt=False, show=False):
     w = moveMotor(client, m, opt)
     data.add(m, w)
     
-    if show:
-        print("Motor scan %02d: %.1f µm - %.1f%%" % (len(data), m, 100*w))
+    logger.debug("Motor scan %02d: %.1f µm - %.1f%%" % (len(data), m, 100*w))
 
 
 def shortScan(client, steps=11, dm=250.0, thresh=0.05, m0=None, opt=True,
-              show=False):
+              logger=None):
 
     # Minimum and maximum motor position
     minpos = client.MotorMinPos
@@ -181,19 +184,22 @@ def shortScan(client, steps=11, dm=250.0, thresh=0.05, m0=None, opt=True,
         if m1 < minpos:
             raise RuntimeError("OPL scan range too small!")
 
-    return runScan(client, m1, m2, dm, thresh, opt, show)
+    return runScan(client, m1, m2, dm, thresh, opt, logger)
 
 
-def longScan(client, dm=250.0, thresh=0.05, opt=True, show=False):
+def longScan(client, dm=250.0, thresh=0.05, opt=True, logger=None):
 
     # Minimum and maximum motor position
     m1 = client.MotorMinPos
     m2 = client.MotorMaxPos
 
-    return runScan(client, m1, m2, dm, thresh, opt, show)
+    return runScan(client, m1, m2, dm, thresh, opt, logger=None)
 
 
-def runScan(client, m1, m2, dm=250.0, thresh=0.05, opt=True, show=False):
+def runScan(client, m1, m2, dm=250.0, thresh=0.05, opt=True, logger=None):
+
+    # Prepare logger
+    logger = logger or logging
 
     # Minimum and maximum motor position
     minpos = client.MotorMinPos
@@ -209,16 +215,16 @@ def runScan(client, m1, m2, dm=250.0, thresh=0.05, opt=True, show=False):
         
         if data:
             opt = False
-        addMotor(client, data, m, opt, show=show)
+        addMotor(client, data, m, opt, logger=logger)
 
         if data[m] is None:
             print(data.position)
             print(m)
         if data[m] > thresh:
-            addMotor(client, data, m-0.7*dm, show=show)
-            addMotor(client, data, m-0.3*dm, show=show)
-            addMotor(client, data, m+0.3*dm, show=show)
-            addMotor(client, data, m+0.7*dm, show=show)
+            addMotor(client, data, m-0.7*dm, logger=logger)
+            addMotor(client, data, m-0.3*dm, logger=logger)
+            addMotor(client, data, m+0.3*dm, logger=logger)
+            addMotor(client, data, m+0.7*dm, logger=logger)
             
         # Stop if a increased diffraction peak indicates interference
         if data.tripleThreshold(thresh):
@@ -238,7 +244,7 @@ def runScan(client, m1, m2, dm=250.0, thresh=0.05, opt=True, show=False):
         m = max(minpos, data.minPos - dm)
         if m >= data.minPos:
             return
-        addMotor(client, data, m, show=show)
+        addMotor(client, data, m, logger=logger)
 
     # Make sure that there is at least one data point above the
     # maximum contrast point
@@ -246,15 +252,17 @@ def runScan(client, m1, m2, dm=250.0, thresh=0.05, opt=True, show=False):
         m = min(maxpos, data.maxPos + dm)
         if m >= data.maxPos:
             return
-        addMotor(client, data, m, show=show)
+        addMotor(client, data, m, logger=logger)
 
     # Return motor position with maximum contrast and its two neighbors
-    if show:
-        print("Scan result: %.1f µm - %.1f%%" % (data.triple[1], max(data)))
+    logger.debug("Scan result: %.1f µm - %.1f%%" % (data.triple[1], max(data)))
     return data.triple
 
 
-def bisectMax(client, triple, minc=0.005, minm=5.0, opt=True, show=False):
+def bisectMax(client, triple, minc=0.005, minm=5.0, opt=True, logger=None):
+
+    # Prepare logger
+    logger = logger or logging
 
     # Determine image contrast at the initial motor positions.
     # Eventually optimize the exposure time at the center position.
@@ -263,9 +271,8 @@ def bisectMax(client, triple, minc=0.005, minm=5.0, opt=True, show=False):
     c0 = moveMotor(client, m0)
     c2 = moveMotor(client, m2)
     count = 0
-    if show:
-        print("Bisect %02d: %.1f µm - %.1f%%  ==  %.1f µm - %.1f%%  ==  %.1f µm %.1f%%" % \
-              (count, m0, 100*c0, m1, 100*c1, m2, 100*c2))
+    logger.debug("Bisect %02d: %.1f µm - %.1f%%  ==  %.1f µm - %.1f%%  ==  %.1f µm %.1f%%" % \
+                (count, m0, 100*c0, m1, 100*c1, m2, 100*c2))
 
     # Center point must have maximum contrast
     if c0 > c1 or c2 > c1:
@@ -297,19 +304,17 @@ def bisectMax(client, triple, minc=0.005, minm=5.0, opt=True, show=False):
             else:
                 m2, c2 = m, c
 
-        if show:
-            print("Bisect %02d: %.1f µm - %.1f%%  ==  %.1f µm - %.1f%%  ==  %.1f µm %.1f%%" % \
-                  (count, m0, 100*c0, m1, 100*c1, m2, 100*c2))
+        logger.debug("Bisect %02d: %.1f µm - %.1f%%  ==  %.1f µm - %.1f%%  ==  %.1f µm %.1f%%" % \
+                     (count, m0, 100*c0, m1, 100*c1, m2, 100*c2))
 
     # Return the center of the final range
     m = (m0 + m2) / 2
-    if show:
-        print("Bisect result: %.1f µm" % m)
+    logger.debug("Bisect result: %.1f µm" % m)
     return m
 
 
 def motorScan(client, mode="both", steps=11, dm=250.0, thresh=0.05,
-              init=None, minc=0.005, minm=5.0, opt=True, show=False):
+              init=None, minc=0.005, minm=5.0, opt=True, logger=None):
 
     mode = mode.lower()
     if mode not in ("short", "long", "both"):
@@ -322,16 +327,16 @@ def motorScan(client, mode="both", steps=11, dm=250.0, thresh=0.05,
         else:
             init = float(init)
         result = shortScan(client, steps=steps, dm=dm, thresh=thresh,
-                           m0=init, opt=opt, show=show)
+                           m0=init, opt=opt, logger=logger)
     else:
         init = None
     if result is None and mode == "short":
         raise RuntimeError("Short OPL scan detected no interference!")
     if result is None:
-        result = longScan(client, dm=dm, thresh=thresh, opt=opt, show=show)
+        result = longScan(client, dm=dm, thresh=thresh, opt=opt, logger=logger)
     if result is None:
         raise RuntimeError("Long OPL scan detected no interference!")
 
-    m = bisectMax(client, result, minc, minm, opt, show)
+    m = bisectMax(client, result, minc, minm, opt, logger=logger)
     client.MotorPos = m
     return m, init
