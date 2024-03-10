@@ -4,6 +4,7 @@
 # This program is free software under the terms of the MIT license.      #
 ##########################################################################
 
+import logging
 from types import SimpleNamespace
 import numpy as np
 from scidatacontainer import timestamp, load_config
@@ -187,6 +188,6 @@ class HoloClient(DhmClient):
         else:
             items = None
 
-        # Return HoloContainer
+        # Return container object
         config = config or self.config
         return HoloContainer(holo=holo, params=params, items=items, config=config, **kwargs)

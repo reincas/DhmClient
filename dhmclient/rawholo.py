@@ -13,7 +13,7 @@ class HoloContainer(Container):
     """ SciDataContainer for the storage of digital holograms. """
 
     containerType = "DigitalHologram"
-    containerVersion = 1.0
+    containerVersion = 1.1
 
     def __pre_init__(self):
 
@@ -55,7 +55,7 @@ class HoloContainer(Container):
         # Update items dictionary
         items["content.json"] = content
         items["meta.json"] = meta
-        items["meas/image.json"] = params
+        items["data/parameter.json"] = params
         items["meas/image.png"] = holo
         self.kwargs["items"] = items
 
