@@ -55,7 +55,7 @@ class HoloContainer(Container):
         # Update items dictionary
         items["content.json"] = content
         items["meta.json"] = meta
-        items["data/parameter.json"] = params
+        items["data/hologram.json"] = params
         items["meas/image.png"] = holo
         self.kwargs["items"] = items
 
@@ -83,4 +83,4 @@ class HoloContainer(Container):
 
         """ Shortcut to the parameter data dictionary. """
         
-        return self["meas/image.json"]
+        return self["data/hologram.json"]

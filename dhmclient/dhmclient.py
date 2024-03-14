@@ -222,6 +222,7 @@ class DhmClient(object):
                 return self.remoteCmd(cmd, outfmt, infmt, *inargs)
             return func
 
+        print(name)
         return super().__getattr__(name)
 
 

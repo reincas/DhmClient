@@ -25,30 +25,36 @@ class HoloClient(DhmClient):
     contrastQuantile = 0.05
 
 
-    def __init__(self, controller=None, logger=None, config=None, **kwargs):
+    def __init__(self, system, logger=None, **kwargs):
 
         # Store logger
         self.log = logger or logging
         self.log.info("Initializing HoloClient.")
 
-        # SciData author configuration
-        self.config = config or load_config()
-        
-        # Optional interface to the stage controller
-        self.controller = kwargs.pop("controller", None)
+        # Store system object
+        self.system = system
+
+        # Store user data dictionary
+        self.user = self.system.user
+        self.config = load_config(
+            author = self.user.get("name", None),
+            email = self.user.get("email", None),
+            organization = self.user.get("organization", None),
+            orcid = self.user.get("orcid", None))
 
         # Exposure optimization parameter
         self.maxof = kwargs.pop("maxof", 9)
 
         # OPL scan parameters
+        args = kwargs.pop("hologram", {})
         self.opl = SimpleNamespace(
-            mode = str(kwargs.pop("oplmode", "both")),
-            steps = int(kwargs.pop("oplsteps", 11)),
-            dm = float(kwargs.pop("opldm", 250.0)),
-            thresh = float(kwargs.pop("oplthresh", 0.2)),
-            minc = float(kwargs.pop("oplminc", 0.001)),
-            minm = float(kwargs.pop("oplminms", 5.0)),
-            opt = bool(kwargs.pop("oplopt", True)),
+            mode = str(args.pop("oplmode", "both")),
+            steps = int(args.pop("oplsteps", 11)),
+            dm = float(args.pop("opldm", 250.0)),
+            thresh = float(args.pop("oplthresh", 0.2)),
+            minc = float(args.pop("oplminc", 0.001)),
+            minm = float(args.pop("oplminms", 5.0)),
+            opt = bool(args.pop("oplopt", True)),
             timestamp = None,
             m = None,
             m0 = None,
@@ -62,8 +68,18 @@ class HoloClient(DhmClient):
             )
 
         # Initialize parent class
-        super().__init__(**kwargs)
+        host = args.pop("host", None)
+        port = args.pop("port", None)
+        super().__init__(host, port)
 
+        # Select objective
+        logger.info("Select objective.")
+        cid = self.system.objective["dhmId"]
+        configs = self.ConfigList
+        name = dict(configs)[cid]
+        self.Config = cid
+        logger.info("Objective: %s [%d]" % (name, cid))
+        
         # Done
         self.log.info("Initialized HoloClient.")
         
@@ -114,8 +130,7 @@ class HoloClient(DhmClient):
 
         refHolo(img, blur=ref.blur, order=ref.order, ref=ref)
 
-        if self.controller is not None:
-            ref.x, ref.y, ref.z = self.controller.position("XYZ")
+        ref.x, ref.y, ref.z = self.system.position("XYZ")
         ref.motor = self.MotorPos
         ref.shutter = self.CameraShutter
 
@@ -179,14 +194,11 @@ class HoloClient(DhmClient):
         params = self.parameters(holo, count)
 
         # Stage positions
-        if self.controller is not None:
-            x, y, z = self.controller.position("XYZ")
-            items = { "meas/stage.json": {
-                "xPositionUm": x,
-                "yPositionUm": y,
-                "zPositionUm": z}}
-        else:
-            items = None
+        x, y, z = self.system.position("XYZ")
+        items = { "meas/stage.json": {
+            "xPositionUm": x,
+            "yPositionUm": y,
+            "zPositionUm": z}}
 
         # Return container object
         config = config or self.config
